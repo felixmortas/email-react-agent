@@ -76,20 +76,21 @@ def dynamic_system_prompt(request: ModelRequest) -> str:
                 ✅ CORRECT: fill_text_field(tag='input', identifier='password', element_id='passwd', element_class='account_input', element_type='password')
 
                 ## CURRENT PROGRESS STATE:
-                - Connection page reached: {state.get('isConnectionPageReached', False)}
-                - Username filled: {state.get('isUsernameFilled', False)}
-                - Password filled: {state.get('isPasswordFilled', False)}
-                - Logged in: {state.get('isLogedIn', False)}
-                - User profile page reached: {state.get('isUserProfilPageReached', False)}
-                - Change email page reached: {state.get('isChangeEmailPageReached', False)}
-                - Actual email filled: {state.get('isActualEmailFilled', False)}
-                - New email filled: {state.get('isNewEmailFilled', False)}
-                - Email changed: {state.get('isEmailChanged', False)}
+                - isConnectionPageReached: {state.get('isConnectionPageReached', False)}
+                - isUsernameFilled: {state.get('isUsernameFilled', False)}
+                - isPasswordFilled: {state.get('isPasswordFilled', False)}
+                - isLogedIn: {state.get('isLogedIn', False)}
+                - isUserProfilPageReached: {state.get('isUserProfilPageReached', False)}
+                - isChangeEmailPageReached: {state.get('isChangeEmailPageReached', False)}
+                - isActualEmailFilled: {state.get('isActualEmailFilled', False)}
+                - isNewEmailFilled: {state.get('isNewEmailFilled', False)}
+                - isEmailChanged: {state.get('isEmailChanged', False)}
 
                 # INSTRUCTION:
                 The URL of the website to change is: {website_url}
                 At each beginning of step, check the CURRENT PROGRESS STATE above.
                 Find the first step that is False and execute it by calling all the tools needed.
                 Once a step is done, update its state to True before using the next tool required in the same tool call.
+                Unless filling steps, upgrade the steps only after receiving the HTML content and checking that the previous action worked.
                 """
     return system_prompt
