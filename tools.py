@@ -43,7 +43,7 @@ async def click_element(
     """
 
     click_response = await _click_element(runtime, text, tag, id_name, class_name, type_name)
-    await runtime.context["page"].wait_for_load_state("networkidle")
+    await runtime.context["page"].wait_for_load_state("domcontentloaded")
     html_content = await _read_page_html(runtime)
 
     return f"{click_response}\n\nHTML Content:\n{html_content}"
