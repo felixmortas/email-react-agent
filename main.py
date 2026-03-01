@@ -11,6 +11,7 @@ import asyncio
 from langchain.messages import HumanMessage
 
 from agent import agent
+from browser_helpers import extract_page_html
 from context import Context
 from langfuse_engine import langfuse_handler
 
@@ -20,7 +21,7 @@ from langfuse_engine import langfuse_handler
 @asynccontextmanager
 async def playwright_session():
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False, slow_mo=500)
+        browser = await p.chromium.launch(headless=True, slow_mo=500)
         page = await browser.new_page()
         try:
             yield page
@@ -47,14 +48,15 @@ async def run_email_change_workflow(
     print("="*80)
         
     async with playwright_session() as page:
+        await page.goto(url=website_url, wait_until="domcontentloaded")
+        html_content = await extract_page_html(page)
+
         inputs = {
             "messages": [
-                HumanMessage(f"Change the email address on this website: {website_name}")
+                HumanMessage(f"HTML content of the starting page for website {website_name}\n\n{html_content}")
             ]
         }
 
-        # for chunk in agent.stream(inputs, stream_mode="updates"):
-        #     print(chunk)
 
         await agent.ainvoke(inputs, context=Context(page=page, website_url=website_url), 
             config={
