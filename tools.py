@@ -41,11 +41,24 @@ async def click_element(
     Returns:
         A compact representation of the page elements after the click.
     """
+    page = runtime.context["page"]
 
-    click_response = await _click_element(runtime, text, tag, id_name, class_name, type_name)
-    await runtime.context["page"].wait_for_load_state("domcontentloaded")
+    navigation_occurred = False
+
+    async def do_click_and_read():
+        nonlocal navigation_occurred
+        click_response = await _click_element(runtime, text, tag, id_name, class_name, type_name)
+        return click_response
+
+    try:
+        async with page.expect_navigation(wait_until="domcontentloaded", timeout=5000):
+            click_response = await do_click_and_read()
+        navigation_occurred = True
+    except Exception:
+        # No navigation — click still happened, just no page change
+        click_response = await _click_element(runtime, text, tag, id_name, class_name, type_name)
+
     html_content = await _read_page_html(runtime)
-
     return f"{click_response}\n\nHTML Content:\n{html_content}"
     
 @tool
