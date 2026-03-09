@@ -3,17 +3,20 @@ Main Entry Point for ReAct Agent Email Changer
 The LLM generates all the logic - minimal code, maximum flexibility
 """
 
-import os
 from dotenv import load_dotenv
+load_dotenv()
+
+import argparse
+import os
 from playwright.async_api import async_playwright
 from contextlib import asynccontextmanager
 import asyncio
 from langchain.messages import HumanMessage
 
+from langfuse_engine import langfuse_handler
 from agent import agent
 from browser_helpers import extract_page_html
 from context import Context
-from langfuse_engine import langfuse_handler
 
 # ==================== PLAYWRIGHT CONTEXT MANAGER ====================
 
@@ -71,9 +74,6 @@ async def run_email_change_workflow(
 
 def main():
     """Main entry point"""
-    load_dotenv()
-    
-    import argparse
     
     parser = argparse.ArgumentParser(
         description="ReAct Agent for automated email changing",
