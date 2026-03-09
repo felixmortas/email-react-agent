@@ -53,54 +53,43 @@ async def _click_element(
     Clicks first visible element only. No partial/regex matching.
     """
     page = runtime.context["page"]
-    
-    # ─────────────────────────────────────────────────────────────
-    # MODE 1: text + tag → <tag>text</tag>
-    # ─────────────────────────────────────────────────────────────
-    if text and tag_name:
-        selector = f"{tag_name}:has-text('{text}')"
+
+    async def try_click(selector: str, label: str) -> str | None:
         try:
             locator = page.locator(selector).first
             if await locator.count() > 0 and await locator.is_visible():
                 await locator.scroll_into_view_if_needed()
                 await locator.click(timeout=5000)
-                
-                return f"✅ Clicked: <{tag_name}>{text}</{tag_name}>"
+                return f"✅ Clicked: {label}"
         except Exception:
             pass
-        return f"❌ Not found: <{tag_name}>{text}</{tag_name}>"
-    
-    # ─────────────────────────────────────────────────────────────
-    # MODE 2: tag + id/class → <tag id='x' class='y'>
-    # ─────────────────────────────────────────────────────────────
+        return None
+
+    # ── MODE 1: text + tag → <tag>text</tag> ──────────────────
+    if text and tag_name:
+        label = f"<{tag_name}>{text}</{tag_name}>"
+        result = await try_click(f"{tag_name}:has-text('{text}')", label)
+        return result or f"❌ Not found: {label}"
+
+    # ── MODE 2: tag + id/class/type → <tag id='x' class='y'> ──
     if tag_name and (id_name or class_name or type_name):
-        attrs = ""
         selector = tag_name
+        attrs = ""
         if id_name:
             selector += f"#{id_name}"
-            attrs += f" id=\"{id_name}\""
+            attrs += f' id="{id_name}"'
         if class_name:
             selector += f".{class_name.split(' ')}"
-            attrs += f" class=\"{class_name}\""   
+            attrs += f' class="{class_name}"'
         if type_name:
             selector += f"[type='{type_name}']"
-            attrs += f"type=\"{type_name}\""
-        
-        try:
-            locator = page.locator(selector).first
-            if await locator.count() > 0 and await locator.is_visible():
-                await locator.scroll_into_view_if_needed()
-                await locator.click(timeout=5000)
-                
-                return f"✅ Clicked: <{tag_name} {attrs}>"
-        except Exception:
-            pass
-        
-        return f"❌ Not found: <{tag_name}{attrs}>"
-    
-    # ─────────────────────────────────────────────────────────────
-    # INVALID PARAMETERS
-    # ─────────────────────────────────────────────────────────────
+            attrs += f' type="{type_name}"'
+
+        label = f"<{tag_name} {attrs.strip()}>"
+        result = await try_click(selector, label)
+        return result or f"❌ Not found: {label}"
+
+    # ── INVALID PARAMETERS ─────────────────────────────────────
     return "❌ Invalid params: provide (text + tag_name) OR (tag_name + id_name/class_name)"
 
 async def _fill_text_field(
