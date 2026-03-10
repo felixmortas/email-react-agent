@@ -1,9 +1,6 @@
 import os
-from typing import Annotated
 
-from langchain.messages import ToolMessage
-from langgraph.types import Command
-from langchain.tools import InjectedToolCallId, ToolRuntime
+from langchain.tools import ToolRuntime
 
 from context import Context
 
@@ -149,15 +146,3 @@ async def _navigate_to_url(runtime: ToolRuntime[Context], url: str) -> str:
     await page.goto(url, wait_until="domcontentloaded", timeout=60000)
     
     return f"Navigated to {url}"
-
-
-async def _update_progress_step(step: str) -> Command:
-    """
-    Signals that the step in progress has been completed.
-
-    Args: 
-        step: Step of the CURRENT PROGRESS STATE.
-    """
-    return Command(update={  
-        step: True,
-    })

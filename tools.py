@@ -1,8 +1,10 @@
 from typing import Annotated
 
-from langchain.tools import tool, ToolRuntime, InjectedToolCallId
+from langchain.messages import ToolMessage
+from langgraph.types import Command
+from langchain.tools import InjectedToolCallId, tool, ToolRuntime
 from context import Context
-from browser_helpers import _read_page_html, _click_element, _fill_text_field, _update_progress_step
+from browser_helpers import _read_page_html, _click_element, _fill_text_field
 
 @tool
 async def read_page_html(runtime: ToolRuntime[Context]) -> str:
@@ -115,17 +117,22 @@ async def close_popup(runtime: ToolRuntime[Context]) -> str:
     return "No popup detected with common selectors"
 
 @tool
-async def update_progress_state(step: str, runtime: ToolRuntime[Context]) -> str:
+async def update_progress_state(step: str, runtime: ToolRuntime[Context], tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
     """
     Signals that the step in progress has been completed.
 
     Args: 
         step: Step of the CURRENT PROGRESS STATE.
     """
-    update_response = await _update_progress_step(step=step)
     html_content = await _read_page_html(runtime)
 
-    return f"{update_response}\n\nHTML Content: {html_content}"
+    return Command(update={
+        step: True,
+        "messages": [ToolMessage(
+            content=f"Step '{step}' marked as complete.\n\nHTML Content: {html_content}",
+            tool_call_id=tool_call_id,
+        )]
+    })
 
 
 
