@@ -22,9 +22,9 @@ from context import Context
 
 
 @asynccontextmanager
-async def playwright_session():
+async def playwright_session(headless: bool = True):
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True, slow_mo=500)
+        browser = await p.chromium.launch(headless=headless, slow_mo=500)
         page = await browser.new_page()
         try:
             yield page
@@ -39,6 +39,7 @@ async def run_email_change_workflow(
     website_url: str,
     website_name: str = "Website",
     agent = None,
+    headless: bool = True,
 ):
     """
     Complete workflow: Login → Navigate to Settings → Change Email
@@ -51,7 +52,7 @@ async def run_email_change_workflow(
     print(f"🚀 EMAIL CHANGE WORKFLOW FOR: {website_name}")
     print("="*80)
         
-    async with playwright_session() as page:
+    async with playwright_session(headless=headless) as page:
         await page.goto(url=website_url, wait_until="domcontentloaded")
         html_content = await extract_page_html(page)
 
@@ -83,6 +84,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  python main.py --url https://www.agrosemens.com --website Agrosemens --model mistral-large-latest --no-headless
   python main.py --url https://www.agrosemens.com --website Agrosemens --model mistral-large-latest
         """
     )
@@ -106,6 +108,13 @@ Examples:
         type=str,
         default="mistral-large-latest",
         help="Model name (e.g. mistral-large-latest, gemini-3-flash-preview)"
+    )
+
+    parser.add_argument(
+        "--headless",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Run browser in headless mode"
     )
 
         
@@ -133,7 +142,8 @@ Examples:
     asyncio.run(run_email_change_workflow(
         website_url=args.url,
         website_name=args.website,
-        agent=agent
+        agent=agent,
+        headless=args.headless,
     ))
     
 
