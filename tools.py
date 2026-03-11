@@ -7,25 +7,34 @@ from context import Context
 from browser_helpers import _read_page_html, _click_element, _fill_text_field
 
 @tool
-async def read_page_html(runtime: ToolRuntime[Context]) -> str:
+async def read_page_html(runtime: ToolRuntime[Context], tool_call_id: Annotated[str, InjectedToolCallId]) -> str:
     """
     Returns compact page elements: <tag>text</tag> or <tag id="x" class="y" type="z">
     """
     html_content = await _read_page_html(runtime)
 
-    return f"HTML Content:\n{html_content}"
+    return Command(update={
+        'current_url': runtime.context["page"].url,
+        "messages": [ToolMessage(
+            content=f"HTML Content:\n{html_content}",
+            tool_call_id=tool_call_id,
+        )]
+    })
+    
+    f"HTML Content:\n{html_content}"
 
 
 
 @tool
 async def click_element(
     runtime: ToolRuntime[Context],
+    tool_call_id: Annotated[str, InjectedToolCallId],
     text: str = "",
     tag: str = "",
     id_name: str = "",
     class_name: str = "",
     type_name: str = ""
-) -> str:
+) -> Command:
     """
     Clicks a DOM element identified by a unique combination of attributes, then returns the updated page elements.
 
@@ -61,7 +70,13 @@ async def click_element(
         click_response = await _click_element(runtime, text, tag, id_name, class_name, type_name)
 
     html_content = await _read_page_html(runtime)
-    return f"{click_response}\n\nHTML Content:\n{html_content}"
+    return Command(update={
+        'current_url': page.url,
+        "messages": [ToolMessage(
+            content=f"{click_response}\n\nHTML Content:\n{html_content}",
+            tool_call_id=tool_call_id,
+        )]
+    })
     
 @tool
 async def fill_text_field(
@@ -77,6 +92,20 @@ async def fill_text_field(
     The selector is choosed using a unique combination of: tag and/or id and/or class and/or type.
     The 'identifier' parameter determines which credential to use.
     Read the HTML page again if the filling action fails.
+    
+    ## ⚠️ CRITICAL - CREDENTIALS HANDLING:
+    - NEVER ask for credentials - they are AUTOMATICALLY retrieved from environment variables
+    - Use fill_text_field with 'identifier' parameter ONLY:
+    - DO NOT pass the 'value' parameter - it's handled automatically
+
+    ## FIELD IDENTIFICATION:
+    - The website language can be French or English
+    - Email field: look for id containing 'email', type='email' or something relevent
+    - Password field: look for id containing 'passwd', 'password', type='password' or something relevent
+
+    ## EXAMPLE CALLS:
+    ✅ CORRECT: fill_text_field(tag='input', identifier='email', element_id='email', element_class='account_input', element_type='email')
+    ✅ CORRECT: fill_text_field(tag='input', identifier='password', element_id='passwd', element_class='account_input', element_type='password')
         
     Args:
         identifier: 'EMAIL' | 'PASSWORD' | 'NEW_EMAIL' (REQUIRED)
@@ -117,17 +146,22 @@ async def close_popup(runtime: ToolRuntime[Context]) -> str:
     return "No popup detected with common selectors"
 
 @tool
-async def update_progress_state(step: str, runtime: ToolRuntime[Context], tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
+async def complete_step(step: str, runtime: ToolRuntime[Context], tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
     """
     Signals that the step in progress has been completed.
 
     Args: 
         step: Step of the CURRENT PROGRESS STATE.
     """
+    page = runtime.context["page"]
+    current_url = page.url
+
     html_content = await _read_page_html(runtime)
 
     return Command(update={
         step: True,
+        'current_url': current_url,
+        'last_step_url': current_url,
         "messages": [ToolMessage(
             content=f"Step '{step}' marked as complete.\n\nHTML Content: {html_content}",
             tool_call_id=tool_call_id,
@@ -141,5 +175,5 @@ tools = [
     click_element,
     fill_text_field,
     # close_popup,
-    update_progress_state,
+    complete_step,
 ]

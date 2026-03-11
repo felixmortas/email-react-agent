@@ -57,7 +57,9 @@ async def run_email_change_workflow(
         inputs = {
             "messages": [
                 HumanMessage(f"HTML content of the starting page for website {website_name}\n\n{html_content}")
-            ]
+            ],
+            "current_url": website_url,
+            "last_step_url": website_url,
         }
 
 
