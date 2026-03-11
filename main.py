@@ -14,7 +14,7 @@ import asyncio
 from langchain.messages import HumanMessage
 
 from langfuse_engine import langfuse_handler
-from agent import agent
+from agent import create_email_agent
 from browser_helpers import extract_page_html
 from context import Context
 
@@ -37,7 +37,8 @@ async def playwright_session():
 
 async def run_email_change_workflow(
     website_url: str,
-    website_name: str = "Website"
+    website_name: str = "Website",
+    agent = None,
 ):
     """
     Complete workflow: Login → Navigate to Settings → Change Email
@@ -82,8 +83,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python main.py --url https://www.agrosemens.com --website Agrosemens
-  python main.py --url https://example.com --website "Example Site" --new-email new@email.com
+  python main.py --url https://www.agrosemens.com --website Agrosemens --model mistral-large-latest
         """
     )
     
@@ -100,6 +100,14 @@ Examples:
         required=True,
         help="Website name for context"
     )
+
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="mistral-large-latest",
+        help="Model name (e.g. mistral-large-latest, gemini-3-flash-preview)"
+    )
+
         
     args = parser.parse_args()
     
@@ -120,9 +128,12 @@ Examples:
         return
     
     # Run the workflow
+    agent = create_email_agent(model_name=args.model)
+
     asyncio.run(run_email_change_workflow(
         website_url=args.url,
-        website_name=args.website
+        website_name=args.website,
+        agent=agent
     ))
     
 
