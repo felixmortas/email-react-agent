@@ -8,6 +8,7 @@ from tools import tools
 from middleware.dynamic_system_prompt import dynamic_system_prompt
 from middleware.trim_messages import make_trim_messages
 from middleware.clear_tool_outputs import clear_tool_outputs
+from middleware.model_fallback import fallback
 from state import State
 from context import Context
 
@@ -28,6 +29,6 @@ def create_email_agent(model_name: str = "mistral-large-latest"):
         tools=tools, 
         state_schema=State, 
         context_schema=Context, 
-        middleware=[trim_messages, clear_tool_outputs, dynamic_system_prompt],
+        middleware=[trim_messages, clear_tool_outputs, dynamic_system_prompt, fallback],
         debug=True
     )
