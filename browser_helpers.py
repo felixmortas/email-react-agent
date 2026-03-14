@@ -31,6 +31,81 @@ async def extract_page_html(page) -> str:
     }""")
     return "\n".join(elements)
 
+async def extract_semantic_html(page) -> str:
+    """
+    Returns compact page elements with semantic context for LLM navigation decisions.
+    Captures headings, forms, alerts, nav landmarks and interactive elements.
+    """
+    elements = await page.evaluate("""() => {
+        const INTERACTIVE = 'button, a[href], input, select, textarea, [role="button"]';
+        const SEMANTIC    = 'h1, h2, h3, [role="alert"], [role="status"], [role="dialog"], '
+                          + '[aria-live], form, nav, main, .error, .success, .step, '
+                          + '[class*="error"], [class*="success"], [class*="step"], '
+                          + '[class*="confirm"], [class*="modal"]';
+
+        const seen = new Set();
+
+        function attrs(el) {
+            const parts = [];
+            if (el.id)                        parts.push(`id="${el.id}"`);
+            if (el.name)                      parts.push(`name="${el.name}"`);
+            if (el.type)                      parts.push(`type="${el.type}"`);
+            if (el.placeholder)               parts.push(`placeholder="${el.placeholder}"`);
+            if (el.getAttribute('href'))      parts.push(`href="${el.getAttribute('href')}"`);
+            if (el.getAttribute('role'))      parts.push(`role="${el.getAttribute('role')}"`);
+            if (el.getAttribute('aria-label')) parts.push(`aria-label="${el.getAttribute('aria-label')}"`);
+            if (el.disabled)                  parts.push('disabled');
+            if (el.required)                  parts.push('required');
+            return parts.length ? ' ' + parts.join(' ') : '';
+        }
+
+        function isVisible(el) {
+            const r = el.getBoundingClientRect();
+            return r.width > 0 && r.height > 0
+                && getComputedStyle(el).visibility !== 'hidden'
+                && getComputedStyle(el).display    !== 'none';
+        }
+
+        function serialize(el) {
+            if (seen.has(el)) return null;
+            seen.add(el);
+
+            const tag  = el.tagName.toLowerCase();
+            const text = (el.innerText || el.value || '').trim().slice(0, 120);
+            const a    = attrs(el);
+
+            return text
+                ? `<${tag}${a}>${text}</${tag}>`
+                : `<${tag}${a}/>`;
+        }
+
+        const results = [];
+                                   
+        if (document.title) {
+            results.push(`<title>${document.title}</title>`);
+        }
+
+
+        // 1. Semantic landmarks first (page context / current step)
+        document.querySelectorAll(SEMANTIC).forEach(el => {
+            if (isVisible(el)) {
+                const s = serialize(el);
+                if (s) results.push(s);
+            }
+        });
+
+        // 2. Interactive elements
+        document.querySelectorAll(INTERACTIVE).forEach(el => {
+            if (isVisible(el)) {
+                const s = serialize(el);
+                if (s) results.push(s);
+            }
+        });
+
+        return results;
+    }""")
+    return "\n".join(elements)
+
 async def _read_page_html(runtime: ToolRuntime[Context]) -> str:
     """Tool wrapper: reads HTML from runtime context."""
     return await extract_page_html(runtime.context["page"])

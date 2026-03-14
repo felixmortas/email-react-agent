@@ -4,6 +4,7 @@ from langchain.agents import create_agent
 from langchain_mistralai import ChatMistralAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 
+from middleware.step_judge import judge_current_step
 from tools import tools
 from middleware.dynamic_system_prompt import dynamic_system_prompt
 from middleware.trim_messages import make_trim_messages
@@ -29,6 +30,6 @@ def create_email_agent(model_name: str = "mistral-large-latest"):
         tools=tools, 
         state_schema=State, 
         context_schema=Context, 
-        middleware=[trim_messages, clear_tool_outputs, dynamic_system_prompt, fallback],
+        middleware=[trim_messages, clear_tool_outputs, judge_current_step, dynamic_system_prompt, fallback],
         debug=True
     )
