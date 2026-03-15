@@ -122,28 +122,6 @@ async def fill_text_field(
     return fill_response
 
 
-
-@tool
-async def close_popup(runtime: ToolRuntime[Context]) -> str:
-    """
-    Tries to close an active popup or modal using common selectors.
-    """
-    page = runtime.context["page"]
-    selectors = [
-        "button[aria-label='Close']", 
-        ".close", 
-        "button:text('Close')",
-        "button:text('OK')",
-        "[role='dialog'] button:first-child"
-    ]
-    
-    for selector in selectors:
-        if await page.is_visible(selector):
-            await page.click(selector)
-            return f"Popup closed with selector: {selector}"
-    
-    return "No popup detected with common selectors"
-
 @tool
 async def complete_step(step: str, runtime: ToolRuntime[Context], tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
     """
@@ -173,6 +151,5 @@ tools = [
     read_page_html,
     click_element,
     fill_text_field,
-    # close_popup,
     complete_step,
 ]
