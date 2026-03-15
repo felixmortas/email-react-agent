@@ -4,33 +4,6 @@ from langchain.tools import ToolRuntime
 
 from context import Context
 
-
-async def extract_page_html(page) -> str:
-    """
-    Returns compact page elements: <tag>text</tag> or <tag id="x" class="y">
-    Minimizes tokens while keeping essential info for LLM decisions.
-    """
-    elements = await page.evaluate("""() => {
-        const sel = 'button, a, input, [role="button"], [role="alert"]';
-        return Array.from(document.querySelectorAll(sel))
-            .filter(el => el.offsetWidth > 0 && el.offsetHeight > 0)
-            .map(el => {
-                const tag = el.tagName.toLowerCase();
-                const text = (el.innerText || '').trim();
-                const id = el.id ? ` id="${el.id}"` : '';
-                const cls = el.className ? ` class="${el.className}"` : '';
-                const type = el.type ? ` type="${el.type}"` : '';
-;
-                
-                if (text) {
-                    return `<${tag}${type}>${text}</${tag}>`;
-                } else {
-                    return `<${tag}${id}${cls}${type}>`;
-                }
-            })
-    }""")
-    return "\n".join(elements)
-
 async def extract_semantic_html(page) -> str:
     """
     Returns compact page elements with semantic context for LLM navigation decisions.

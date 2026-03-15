@@ -4,17 +4,18 @@ from langchain.messages import ToolMessage
 from langgraph.types import Command
 from langchain.tools import InjectedToolCallId, tool, ToolRuntime
 from context import Context
-from browser_helpers import extract_page_html, _click_element, _fill_text_field
+from browser_helpers import extract_semantic_html, _click_element, _fill_text_field
 
 @tool
 async def read_page_html(runtime: ToolRuntime[Context], tool_call_id: Annotated[str, InjectedToolCallId]) -> str:
     """
     Returns compact page elements: <tag>text</tag> or <tag id="x" class="y" type="z">
     """
-    html_content = await extract_page_html(runtime)
+    page = runtime.context['page']
+    html_content = await extract_semantic_html(page)
 
     return Command(update={
-        'current_url': runtime.context["page"].url,
+        'current_url': page.url,
         "messages": [ToolMessage(
             content=f"HTML Content:\n{html_content}",
             tool_call_id=tool_call_id,
@@ -66,7 +67,7 @@ async def click_element(
         # No navigation — click still happened, just no page change
         click_response = await _click_element(runtime, text, tag, id_name, class_name, type_name)
 
-    html_content = await extract_page_html(runtime)
+    html_content = await extract_semantic_html(page)
     return Command(update={
         'current_url': page.url,
         "messages": [ToolMessage(
@@ -112,10 +113,11 @@ async def fill_text_field(
         element_type: HTML type from read_page_html (e.g., 'email', 'password')
 
     """
+    page = runtime.context['page']
     fill_response = await _fill_text_field(runtime, identifier, element_tag, element_id, element_class, element_type)
 
     if fill_response.startswith('❌'):
-        html_content = await extract_page_html(runtime)
+        html_content = await extract_semantic_html(page)
         return f"{fill_response}\n\nHTML Content:\n{html_content}"
     return fill_response
 
@@ -153,7 +155,7 @@ async def complete_step(step: str, runtime: ToolRuntime[Context], tool_call_id: 
     page = runtime.context["page"]
     current_url = page.url
 
-    html_content = await extract_page_html(runtime)
+    html_content = await extract_semantic_html(page)
 
     return Command(update={
         step: True,

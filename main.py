@@ -15,7 +15,7 @@ from langchain.messages import HumanMessage
 
 from langfuse_engine import langfuse_handler
 from agent import create_email_agent
-from browser_helpers import extract_page_html
+from browser_helpers import extract_semantic_html
 from context import Context
 
 # ==================== PLAYWRIGHT CONTEXT MANAGER ====================
@@ -54,7 +54,7 @@ async def run_email_change_workflow(
         
     async with playwright_session(headless=headless) as page:
         await page.goto(url=website_url, wait_until="domcontentloaded")
-        html_content = await extract_page_html(page)
+        html_content = await extract_semantic_html(page)
 
         inputs = {
             "messages": [
