@@ -147,9 +147,14 @@ async def complete_step(step: str, runtime: ToolRuntime[Context], tool_call_id: 
 
 
 
-tools = [
-    read_page_html,
-    click_element,
-    fill_text_field,
-    complete_step,
-]
+def get_tools(eco: bool) -> list:
+    base_tools = [
+        read_page_html,
+        click_element,
+        fill_text_field,
+    ]
+    
+    if eco:
+        base_tools.append(complete_step)
+    
+    return base_tools

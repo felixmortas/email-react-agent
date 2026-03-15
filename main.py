@@ -117,7 +117,13 @@ Examples:
         help="Run browser in headless mode"
     )
 
-        
+    parser.add_argument(
+        "--eco",
+        action="store_true",
+        default=False,
+        help="Enable eco mode"
+    )
+
     args = parser.parse_args()
     
     # Get credentials from args or environment
@@ -137,7 +143,7 @@ Examples:
         return
     
     # Run the workflow
-    agent = create_email_agent(model_name=args.model)
+    agent = create_email_agent(model_name=args.model, eco=args.eco)
 
     asyncio.run(run_email_change_workflow(
         website_url=args.url,
