@@ -106,10 +106,6 @@ async def extract_semantic_html(page) -> str:
     }""")
     return "\n".join(elements)
 
-async def _read_page_html(runtime: ToolRuntime[Context]) -> str:
-    """Tool wrapper: reads HTML from runtime context."""
-    return await extract_page_html(runtime.context["page"])
-
 async def _click_element(
     runtime: ToolRuntime[Context],
     text: str,
