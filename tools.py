@@ -137,7 +137,6 @@ async def complete_step(step: str, runtime: ToolRuntime[Context], tool_call_id: 
 
     return Command(update={
         step: True,
-        'current_url': current_url,
         'last_step_url': current_url,
         "messages": [ToolMessage(
             content=f"Step '{step}' marked as complete.\n\nHTML Content: {html_content}",
